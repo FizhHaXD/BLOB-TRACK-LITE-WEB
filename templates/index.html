@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blob Track Lite Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0f172a; /* Dark navy */
+            color: white;
+            font-family: sans-serif;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body class="relative min-h-screen flex flex-col items-center justify-center">
+
+    <!-- Konten -->
+    <div class="w-full max-w-md p-8 bg-gray-800 bg-opacity-80 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-700 z-10 relative">
+        <h1 class="text-3xl font-bold mb-4 text-center">Blob Track Lite Web</h1>
+        <p class="text-center text-gray-300 mb-6 text-sm">Upload your video and apply blob tracking effects.</p>
+        <form class="flex flex-col gap-4" method="POST" enctype="multipart/form-data">
+            <input type="file" name="video" accept="video/*"
+                   class="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 
+                          file:rounded-full file:border-0 file:text-sm file:font-semibold 
+                          file:bg-indigo-500 file:text-white hover:file:bg-indigo-600
+                          bg-gray-700 rounded-lg p-2">
+            <button type="submit"
+                    class="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition duration-300">
+                Process Video
+            </button>
+        </form>
+        {% if output_video %}
+        <div class="mt-6 text-center">
+            <p class="mb-2">Processing complete!</p>
+            <a href="{{ url_for('download', filename=output_video) }}"
+               class="inline-block px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold"
+               download>
+               Download Video
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Canvas untuk Animasi -->
+    <canvas id="bgCanvas"></canvas>
+<script>
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let particles = [];
+    const particleCount = 60;
+    const maxDistance = 140;
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Warna gradien partikel
+    function getColor(i) {
+        const colors = [
+            '#ff6f91', '#ff9671', '#845ec2', '#d65db1',
+            '#f9f871', '#2c73d2', '#0089ba', '#008e9b'
+        ];
+        return colors[i % colors.length];
+    }
+
+    // Buat partikel
+    for (let i = 0; i < particleCount; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 1.2,
+            vy: (Math.random() - 0.5) * 1.2,
+            size: 2 + Math.random() * 3,
+            color: getColor(i)
+        });
+    }
+
+    function draw() {
+        // Buat gradasi background
+        const gradient = ctx.createRadialGradient(
+            canvas.width / 2, canvas.height / 2, 50,
+            canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 1.5
+        );
+        gradient.addColorStop(0, '#0f172a');  // Dark navy
+        gradient.addColorStop(1, '#1e293b');  // Grayish dark
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Gambar partikel
+        for (let i = 0; i < particles.length; i++) {
+            let p = particles[i];
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = p.color;
+            ctx.fillStyle = p.color;
+            ctx.fill();
+
+            // Garis antar partikel
+            for (let j = i + 1; j < particles.length; j++) {
+                let p2 = particles[j];
+                let dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                if (dist < maxDistance) {
+                    ctx.beginPath();
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = p.color;
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = 0.7;
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                }
+            }
+
+            // Update posisi partikel
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        }
+
+        requestAnimationFrame(draw);
+    }
+    draw();
+</script>
+
+
+
+</body>
+</html>
