@@ -3,7 +3,6 @@ gunicorn
 moviepy==1.0.3
 opencv-python-headless==4.12.0.88
 librosa==0.11.0
-numpy==1.26.4
 scipy==1.11.4
 soundfile==0.12.1
 numba==0.58.1
